@@ -1,0 +1,47 @@
+{
+  "name": "predee-coupon-system",
+  "version": "1.0.0",
+  "description": "泰国H5优惠券系统 - ProDee项目",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && nodemon index.js",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "start": "cd server && node index.js",
+    "db:generate": "drizzle-kit generate:pg",
+    "db:push": "drizzle-kit push:pg",
+    "db:studio": "drizzle-kit studio"
+  },
+  "keywords": [
+    "coupon",
+    "h5",
+    "line-login",
+    "vue3",
+    "express"
+  ],
+  "author": "PreDee Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "drizzle-kit": "^0.20.18",
+    "nodemon": "^3.0.1"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "@googlemaps/js-api-loader": "^1.16.10",
+    "@line/bot-sdk": "^10.2.0",
+    "@line/liff": "^2.27.2",
+    "axios": "^1.12.2",
+    "bcryptjs": "^3.0.2",
+    "drizzle-orm": "^0.30.10",
+    "echarts": "^5.6.0",
+    "element-plus": "^2.11.2",
+    "joi": "^18.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "pg": "^8.16.3",
+    "qrcode": "^1.5.4",
+    "vue-echarts": "^7.0.3"
+  }
+}

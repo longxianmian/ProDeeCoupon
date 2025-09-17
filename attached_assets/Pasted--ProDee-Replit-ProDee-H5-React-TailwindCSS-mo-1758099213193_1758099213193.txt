@@ -1,0 +1,305 @@
+# ProDee 首页开发文档（Replit 可执行版本）
+
+## 项目说明
+本项目为 **ProDee H5 系统首页**，基于 React + TailwindCSS 开发，已适配移动端优先（mobile-first）。
+
+功能包含：
+- 顶栏：左侧三横杠按钮（语音/功能菜单）、中间 ProDee Logo、右侧搜索按钮。
+- 侧边栏菜单：语言切换（中/英/泰），使用协议、隐私政策、设置。
+- 类目导航：推荐、3C电子、穿搭、美食、美妆、美甲、母婴。
+- 内容卡片：模拟内容（图片、标题、用户、点赞）。
+- 底部导航：首页、热门、消息、我的。
+
+此版本适配 Replit，可直接运行。
+
+---
+
+## 文件结构
+```
+/ (项目根目录)
+  ├── package.json
+  ├── index.html
+  ├── src/
+  │   ├── index.tsx
+  │   ├── App.tsx
+  │   └── components/ (如需拆分)
+```
+
+---
+
+## package.json 示例
+```json
+{
+  "name": "prodee-homepage",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "lucide-react": "^0.344.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.27",
+    "tailwindcss": "^3.3.2",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.9"
+  }
+}
+```
+
+---
+
+## index.html 示例
+```html
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ProDee 首页</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>
+```
+
+---
+
+## src/index.tsx
+```tsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+```
+
+---
+
+## src/App.tsx
+```tsx
+import React, { useEffect, useMemo, useState } from "react";
+import { Heart } from "lucide-react";
+
+// ==================== i18n ====================
+const dict = {
+  zh: {
+    home: "首页",
+    hot: "热门",
+    message: "消息",
+    my: "我的",
+    cat_recommend: "推荐",
+    cat_3c: "3C电子",
+    cat_fashion: "穿搭",
+    cat_food: "美食",
+    cat_beauty: "美妆",
+    cat_nails: "美甲",
+    cat_mom: "母婴",
+    menu: "功能菜单",
+    lang: "语言切换",
+    terms: "使用协议",
+    privacy: "隐私政策",
+    settings: "设置"
+  }
+};
+
+function useLang() {
+  const [lang, setLang] = useState("zh");
+  const t = useMemo(() => dict[lang] || dict.zh, [lang]);
+  return { lang, setLang, t };
+}
+
+// ==================== Mock 数据 ====================
+const mockPosts = [
+  { id: "P1", user: "Aom", title: "运动手表穿搭分享", likes: 1200, img: "https://images.unsplash.com/photo-1612423284934-c1f0e0d8a801?q=80&w=800&auto=format&fit=crop" },
+  { id: "P2", user: "Ying", title: "健身餐备餐指南", likes: 402, img: "https://images.unsplash.com/photo-1606788075761-3e2dc5279696?q=80&w=800&auto=format&fit=crop" },
+  { id: "P3", user: "Beer", title: "健身日常记录", likes: 980, img: "https://images.unsplash.com/photo-1603252109360-909f9b6f7a0d?q=80&w=800&auto=format&fit=crop" },
+  { id: "P4", user: "Sky", title: "母婴产品好物分享", likes: 1100, img: "https://images.unsplash.com/photo-1592899677977-9c9acddc08d2?q=80&w=800&auto=format&fit=crop" }
+];
+
+// ==================== UI 组件 ====================
+function Hamburger({ onClick }: { onClick: () => void }) {
+  return (
+    <button aria-label="menu" data-testid="hamburger" onClick={onClick} className="w-6 h-6 grid place-content-center rounded-md active:scale-95">
+      <span className="block w-5 h-[2px] bg-black rounded-sm mb-[3px]" />
+      <span className="block w-5 h-[2px] bg-black rounded-sm mb-[3px]" />
+      <span className="block w-5 h-[2px] bg-black rounded-sm" />
+    </button>
+  );
+}
+
+function SideMenu({ open, onClose, t }: { open: boolean; onClose: () => void; t: any }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-30 bg-black bg-opacity-40" onClick={onClose}>
+      <div className="absolute left-0 top-0 w-2/3 max-w-[250px] h-full bg-white shadow-lg p-4" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-lg font-bold mb-4">{t.menu}</h2>
+        <ul className="space-y-2 text-sm">
+          <li className="font-semibold text-gray-700">{t.lang}</li>
+          <li><button className="w-full text-left">中文</button></li>
+          <li><button className="w-full text-left">English</button></li>
+          <li><button className="w-full text-left">ไทย</button></li>
+        </ul>
+        <hr className="my-3" />
+        <ul className="space-y-2 text-sm">
+          <li><button className="w-full text-left text-gray-700">{t.terms}</button></li>
+          <li><button className="w-full text-left text-gray-700">{t.privacy}</button></li>
+          <li><button className="w-full text-left text-gray-700">{t.settings}</button></li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function TopNav({ onMenu }: { onMenu: () => void }) {
+  return (
+    <header className="sticky top-0 z-20 bg-white border-b">
+      <div className="flex items-center justify-between px-3 py-2">
+        <Hamburger onClick={onMenu} />
+        <div className="flex-1 flex justify-center">
+          <div className="text-lg font-bold text-orange-600">ProDee</div>
+        </div>
+        <button className="px-2">🔍</button>
+      </div>
+    </header>
+  );
+}
+
+function CategoryBar({ t, value, onChange }: { t: any; value: string; onChange: (k: string) => void }) {
+  const items = [
+    { key: "recommend", label: t.cat_recommend },
+    { key: "3c", label: t.cat_3c },
+    { key: "fashion", label: t.cat_fashion },
+    { key: "food", label: t.cat_food },
+    { key: "beauty", label: t.cat_beauty },
+    { key: "nails", label: t.cat_nails },
+    { key: "mom", label: t.cat_mom }
+  ];
+  return (
+    <div className="px-2 pt-2">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+        {items.map((c) => (
+          <button
+            key={c.key}
+            onClick={() => onChange(c.key)}
+            className={`shrink-0 px-3 py-1 rounded-full text-xs ${value === c.key ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700"}`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PostCard({ img, title, user, likes }: { img: string; title: string; user: string; likes: number }) {
+  return (
+    <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+      <div className="relative" style={{ aspectRatio: "1 / 1.2" }}>
+        <img className="w-full h-full object-cover" src={img} alt={title} />
+      </div>
+      <div className="p-2">
+        <div className="text-sm font-medium line-clamp-1">{title}</div>
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>{user}</span>
+          <span className="flex items-center gap-1 text-orange-500"><Heart size={12}/> {likes}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BottomNav({ t, active, onNav }: { t: any; active: string; onNav: (k: string) => void }) {
+  const items = [
+    { key: "home", label: t.home, icon: "🏠" },
+    { key: "hot", label: t.hot, icon: "🔥" },
+    { key: "message", label: t.message, icon: "📋" },
+    { key: "my", label: t.my, icon: "👤" }
+  ];
+  return (
+    <nav className="fixed left-1/2 -translate-x-1/2 bottom-0 w-[390px] max-w-full bg-white border-t shadow-md">
+      <div className="mx-auto grid grid-cols-4 text-xs">
+        {items.map((it) => (
+          <button key={it.key} className={`py-2 flex flex-col items-center ${active === it.key ? "text-orange-500" : "text-gray-500"}`} onClick={() => onNav(it.key)}>
+            <div className="text-base">{it.icon}</div>
+            <div>{it.label}</div>
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
+// ==================== 主页面 ====================
+export default function App() {
+  const { t } = useLang();
+  const [category, setCategory] = useState("recommend");
+  const [active, setActive] = useState("home");
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    console.assert(document.querySelector('header'), 'header should render');
+    console.assert(document.querySelectorAll('button').length > 0, 'buttons present');
+    console.assert(document.querySelector('nav'), 'bottom nav present');
+  }, [t]);
+
+  return (
+    <div className="flex justify-center bg-gray-50 min-h-screen">
+      <div className="relative w-full max-w-[390px] bg-white min-h-screen pb-[70px] shadow-xl">
+        <TopNav onMenu={() => setMenuOpen(true)} />
+        <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} t={t} />
+        <CategoryBar t={t} value={category} onChange={setCategory} />
+        <div className="mt-2 px-2 grid grid-cols-2 gap-2">
+          {mockPosts.map((p) => (
+            <PostCard key={p.id} img={p.img} title={p.title} user={p.user} likes={p.likes} />
+          ))}
+        </div>
+        <BottomNav t={t} active={active} onNav={setActive} />
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+## index.css (Tailwind 入口)
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+```
+
+---
+
+📌 **操作指引**：
+1. 将以上文件复制到 Replit 项目中。
+2. 安装依赖：`npm install`
+3. 启动项目：`npm run dev`
+4. 在浏览器预览 ProDee 首页 UI。
