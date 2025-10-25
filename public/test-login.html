@@ -1,0 +1,22 @@
+<!doctype html>
+<html><head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LINE Login Test</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>window.__LIFF_ID__='2008123620-3aeDNRR2';</script>
+</head>
+<body>
+  <button id="btn">一键登录</button>
+  <pre id="out"></pre>
+  <script type="module">
+    import { ensureLogin } from '/client/src/line/liffClient.js';
+    document.querySelector('#btn').onclick = async () => {
+      const ok = await ensureLogin();
+      if (ok){
+        const me = await fetch('/api/me', { credentials:'include' }).then(r=>r.json());
+        document.querySelector('#out').textContent = JSON.stringify(me, null, 2);
+      }
+    };
+  </script>
+</body></html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LINE LIFF 登录测试</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #06C755;
+      margin-bottom: 20px;
+    }
+    .step {
+      background: #f9f9f9;
+      padding: 15px;
+      margin: 15px 0;
+      border-left: 4px solid #06C755;
+      border-radius: 4px;
+    }
+    .step h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+    button {
+      background: #06C755;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+      margin: 10px 0;
+    }
+    button:hover {
+      background: #05b04c;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      background: #e8f5e9;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 5px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .error {
+      background: #ffebee;
+      color: #c62828;
+    }
+    .success {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .log {
+      background: #f5f5f5;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 LINE LIFF 登录测试</h1>
+    
+    <div class="step">
+      <h3>步骤 1: 检查环境</h3>
+      <button onclick="checkEnvironment()">检查是否在 LINE 中</button>
+      <div id="envResult"></div>
+    </div>
+
+    <div class="step">
+      <h3>步骤 2: 初始化 LIFF</h3>
+      <button onclick="initLiff()">初始化 LIFF SDK</button>
+      <div id="initResult"></div>
+    </div>
+
+    <div class="step">
+      <h3>步骤 3: 登录并建立会话</h3>
+      <button id="loginBtn" onclick="performLogin()" disabled>开始登录</button>
+      <div id="loginResult"></div>
+    </div>
+
+    <div class="step">
+      <h3>步骤 4: 验证登录状态</h3>
+      <button onclick="checkSession()">检查后端会话</button>
+      <div id="sessionResult"></div>
+    </div>
+
+    <div id="logs" style="margin-top: 20px;">
+      <h3>📋 操作日志</h3>
+    </div>
+  </div>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>
+    const LIFF_ID = '2008123620-3aeDNRR2';
+    let liffInitialized = false;
+
+    function addLog(message, type = 'info') {
+      const logs = document.getElementById('logs');
+      const logDiv = document.createElement('div');
+      logDiv.className = `log ${type}`;
+      logDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logs.appendChild(logDiv);
+      console.log(message);
+    }
+
+    function checkEnvironment() {
+      const ua = navigator.userAgent.toLowerCase();
+      const inLine = ua.includes('line/');
+      const result = document.getElementById('envResult');
+      
+      if (inLine) {
+        result.className = 'result success';
+        result.textContent = '✅ 您在 LINE 内置浏览器中\n可以使用 LIFF 登录';
+        addLog('环境检测：LINE 内置浏览器', 'success');
+      } else {
+        result.className = 'result error';
+        result.textContent = '⚠️ 您不在 LINE 中\n请在 LINE 应用内打开此页面';
+        addLog('环境检测：非 LINE 环境', 'error');
+      }
+    }
+
+    async function initLiff() {
+      const result = document.getElementById('initResult');
+      const loginBtn = document.getElementById('loginBtn');
+      
+      try {
+        addLog('开始初始化 LIFF SDK...');
+        await liff.init({ liffId: LIFF_ID });
+        liffInitialized = true;
+        
+        result.className = 'result success';
+        result.textContent = `✅ LIFF 初始化成功\nLIFF ID: ${LIFF_ID}`;
+        addLog('LIFF 初始化成功', 'success');
+        
+        loginBtn.disabled = false;
+      } catch (error) {
+        result.className = 'result error';
+        result.textContent = `❌ LIFF 初始化失败\n${error.message}`;
+        addLog(`LIFF 初始化失败: ${error.message}`, 'error');
+      }
+    }
+
+    async function performLogin() {
+      const result = document.getElementById('loginResult');
+      
+      try {
+        if (!liffInitialized) {
+          throw new Error('请先初始化 LIFF');
+        }
+
+        addLog('开始登录流程...');
+
+        // 1. 检查 LIFF 登录状态
+        if (!liff.isLoggedIn()) {
+          addLog('未登录，拉起 LINE 授权...');
+          result.className = 'result';
+          result.textContent = '正在跳转到 LINE 授权页面...';
+          liff.login({ redirectUri: window.location.href });
+          return;
+        }
+
+        addLog('✅ LIFF 已登录');
+
+        // 2. 获取 ID Token
+        const idToken = liff.getIDToken();
+        if (!idToken) {
+          throw new Error('获取 ID Token 失败');
+        }
+        addLog('✅ 已获取 ID Token');
+
+        // 3. 调用后端接口建立会话
+        addLog('正在与后端交换会话...');
+        result.className = 'result';
+        result.textContent = '正在与后端建立会话...';
+
+        const res = await fetch('/api/auth/line/liff/exchange', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ idToken })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data?.success) {
+          throw new Error(data?.message || `后端返回错误: ${res.status}`);
+        }
+
+        result.className = 'result success';
+        result.textContent = `✅ 登录成功！\n用户 ID: ${data.userId}\n用户名: ${data.userName}`;
+        addLog(`✅ 登录成功！用户: ${data.userName}`, 'success');
+
+        // 自动检查会话
+        setTimeout(() => checkSession(), 1000);
+
+      } catch (error) {
+        result.className = 'result error';
+        result.textContent = `❌ 登录失败\n${error.message}`;
+        addLog(`登录失败: ${error.message}`, 'error');
+      }
+    }
+
+    async function checkSession() {
+      const result = document.getElementById('sessionResult');
+      
+      try {
+        addLog('检查后端会话...');
+        
+        const res = await fetch('/api/me', {
+          credentials: 'include'
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.ok) {
+          result.className = 'result success';
+          result.textContent = `✅ 会话有效\n${JSON.stringify(data, null, 2)}`;
+          addLog('✅ 会话有效', 'success');
+        } else {
+          result.className = 'result error';
+          result.textContent = `❌ 未登录\n${JSON.stringify(data, null, 2)}`;
+          addLog('❌ 未登录', 'error');
+        }
+      } catch (error) {
+        result.className = 'result error';
+        result.textContent = `❌ 检查失败\n${error.message}`;
+        addLog(`检查失败: ${error.message}`, 'error');
+      }
+    }
+
+    // 页面加载时自动检查环境
+    window.onload = () => {
+      addLog('页面加载完成');
+      checkEnvironment();
+    };
+  </script>
+</body>
+</html>

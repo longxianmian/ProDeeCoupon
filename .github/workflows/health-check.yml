@@ -1,0 +1,56 @@
+name: Daily Health Check
+
+on:
+  schedule:
+    # Run health check every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    name: System Health Check
+    
+    steps:
+    - name: Check Production Health
+      run: |
+        echo "🔍 Checking production system health..."
+        
+        # TODO: Replace with actual production URL
+        PROD_URL="${{ secrets.PRODUCTION_URL || 'https://your-production-url.replit.app' }}"
+        
+        # API Health Check
+        if curl -f "$PROD_URL/api/health" --max-time 30; then
+          echo "✅ API health check passed"
+        else
+          echo "❌ API health check failed"
+          exit 1
+        fi
+        
+        # Database Health Check
+        if curl -f "$PROD_URL/api/db/health" --max-time 30; then
+          echo "✅ Database health check passed"
+        else
+          echo "❌ Database health check failed"
+          exit 1
+        fi
+        
+        # Frontend Health Check
+        if curl -f "$PROD_URL/" --max-time 30 > /dev/null; then
+          echo "✅ Frontend health check passed"
+        else
+          echo "❌ Frontend health check failed"
+          exit 1
+        fi
+        
+        echo "🎉 All health checks passed!"
+        
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "🚨 Health check failed!"
+        echo "This would typically send notifications to:"
+        echo "- Slack/Discord webhook"
+        echo "- Email alerts"
+        echo "- SMS notifications"
+        # TODO: Implement actual notification system

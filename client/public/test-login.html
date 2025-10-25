@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LINE登录</title>
+</head>
+<body>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+(async () => {
+  const ua = navigator.userAgent.toLowerCase();
+  const inLine = ua.includes('line/') || (window.LIFF != null);
+  if (!inLine) return;
+
+  await liff.init({ liffId: '2008123620-3aeDNRR2' });
+
+  if (!liff.isLoggedIn()) {
+    liff.login({ redirectUri: location.href });
+    return;
+  }
+
+  const idToken = liff.getIDToken();
+  if (!idToken) {
+    alert('获取 LINE ID Token 失败');
+    return;
+  }
+
+  const res = await fetch('/api/auth/line/liff/exchange', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ idToken })
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data?.success) {
+    alert('登录失败：' + (data?.error || res.status));
+    return;
+  }
+
+  location.reload();
+})();
+</script>
+</body>
+</html>

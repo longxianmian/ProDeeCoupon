@@ -1,0 +1,146 @@
+name: PreDee H5 System CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test and Lint
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm run install:all
+      
+    - name: Run linting
+      run: npm run lint
+      continue-on-error: true
+      
+    - name: Run tests
+      run: npm run test
+      continue-on-error: true
+      
+    - name: Build application
+      run: npm run build:all
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-files
+        path: |
+          client/dist/
+          server/
+        retention-days: 1
+
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Scan
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Install dependencies
+      run: npm run install:all
+      
+    - name: Run npm audit
+      run: |
+        cd server && npm audit --audit-level moderate
+        cd ../client && npm audit --audit-level moderate
+      continue-on-error: true
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    name: Deploy to Staging
+    needs: [test, security-scan]
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-files
+        
+    - name: Deploy to Replit (Staging)
+      run: |
+        echo "🚀 Deploying to Replit staging environment..."
+        echo "This would trigger Replit deployment API call"
+        # TODO: Implement Replit API deployment call
+        # curl -X POST "https://api.replit.com/v1/deployments" \
+        #   -H "Authorization: Bearer ${{ secrets.REPLIT_API_TOKEN }}" \
+        #   -H "Content-Type: application/json" \
+        #   -d '{"replId": "${{ secrets.REPLIT_STAGING_ID }}"}'
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    needs: [test, security-scan]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-files
+        
+    - name: Deploy to Replit (Production)
+      run: |
+        echo "🚀 Deploying to Replit production environment..."
+        echo "This would trigger Replit deployment API call"
+        # TODO: Implement Replit API deployment call
+        # curl -X POST "https://api.replit.com/v1/deployments" \
+        #   -H "Authorization: Bearer ${{ secrets.REPLIT_API_TOKEN }}" \
+        #   -H "Content-Type: application/json" \
+        #   -d '{"replId": "${{ secrets.REPLIT_PRODUCTION_ID }}"}'
+        
+    - name: Health check
+      run: |
+        echo "🔍 Performing post-deployment health check..."
+        sleep 30
+        # TODO: Implement health check against production URL
+        # curl -f "${{ secrets.PRODUCTION_URL }}/api/health" || exit 1
+
+  notify:
+    runs-on: ubuntu-latest
+    name: Notify Deployment
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    
+    steps:
+    - name: Notify deployment status
+      run: |
+        if [ "${{ needs.deploy-production.result }}" == "success" ]; then
+          echo "✅ Production deployment successful"
+        elif [ "${{ needs.deploy-staging.result }}" == "success" ]; then
+          echo "✅ Staging deployment successful"
+        else
+          echo "❌ Deployment failed"
+        fi

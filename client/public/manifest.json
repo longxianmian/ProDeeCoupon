@@ -1,0 +1,18 @@
+{
+  "name": "ProDee优惠券系统",
+  "short_name": "ProDee",
+  "description": "ProDee优惠券系统 - 泰国市场H5应用",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#646cff",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
